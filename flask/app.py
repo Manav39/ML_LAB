@@ -1,0 +1,48 @@
+from flask import Flask, request, jsonify
+import cv2
+import easyocr
+import numpy as np
+import google.generativeai as genai
+import PIL
+from flask_cors import CORS
+
+genai.configure(api_key="AIzaSyCHG8tsYSlO9EEEHJhUbUTDQB0tOkclqm8")
+
+app = Flask(__name__)
+CORS(app)
+reader = easyocr.Reader(['en'], gpu=False)
+
+@app.route('/ingredientsfetch', methods=['POST'])
+def ingredientsfetch():
+    try:
+        import os
+        image_file = request.files['image']
+        image_file.save("temp_image.jpg")
+        img = PIL.Image.open('temp_image.jpg')
+        model = genai.GenerativeModel('gemini-1.5-flash')
+        prompt = "Extract all the food ingredients from the following text without any special characters or numbers just , as the separator between ingredients"
+        result = model.generate_content([prompt,img],stream=True)
+        result.resolve()
+        os.remove("temp_image.jpg")
+        return jsonify({'result': result.text})
+    except Exception as e:
+        print(str(e))
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/geminiocr', methods=['POST'])
+def geminiocr():
+    try:
+        import os
+        image_file = request.files['image']
+        image_file.save("temp_image.jpg")
+        img = PIL.Image.open('temp_image.jpg')
+        model = genai.GenerativeModel('gemini-1.5-flash')
+        result = model.generate_content([img,"Extract all the food ingredients from the image without any special characters or numbers just , as the separator between ingredients"],stream=True)
+        result.resolve()
+        os.remove("temp_image.jpg")
+        return jsonify({'result': result.text})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    
+if __name__ == '__main__':
+    app.run(debug=True)
