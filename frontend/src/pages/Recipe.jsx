@@ -99,6 +99,10 @@ export default function Recipe() {
         method: "POST",
         body: formData
       })
+			const res2 = await fetch(`http://127.0.0.1:5000/food-detect`, {
+				method: "POST",
+				body: formData
+			});
       const data = await res.json()
       console.log(data);
       const arr = Array.from(data.result.split(",").map(i => i.trim()))
